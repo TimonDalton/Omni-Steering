@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Motor Output Display</title>
+	<style type="text/css">
+		body{
+				background: #99c7d1;
+		}
+	</style>
+</head>
+<body>
+
+	<canvas id = "canvas" height = "400" widht = "400"></canvas>
+
+<script type = "text/javascript">
+	var c = document.getElementById("canvas");
+	var ctx = c.getContext("2d");
+
+	canvas.height = window.innerHeight;
+	canvas.width = window.innerWidth;
+
+	var joyStartX = 600;
+	var joyStartY = 400;
+	var joyRadius = 20;
+
+	var leftTrigger = 0;
+	var rightTrigger = 0;
+
+	var newJX = mX;
+	var newJY = mY;
+	var in_x = 0;
+	var in_y = 0;
+	var in_rad = 0;
+	var changed_rad = 0;
+	var size_scalar = 0;
+	var xVect = 0;
+	var yVect = 0;
+	var normalize_scalar;
+
+	var newJX = joyStartX;
+	var newJY = joyStartY;
+
+	var mX = 0;
+	var mY = 0;
+	window.addEventListener('mousemove',function(evt){
+		mX = evt.x;
+		mY = evt.y;
+	});
+	//init
+	updateOmniGraphics();
+	ctx.fillRect(xTop,yTop,RWidth,RWidth);	
+
+	var Tx = 0;
+	var Tposx = 600;
+
+	var scalar = 1;
+	var vectconstScalar =  (70);
+	function updateTriggers(){	
+		
+		if (Math.abs(Tx) + Math.abs(xVect) > vectconstScalar || Math.abs(Tx) + Math.abs(yVect) > vectconstScalar){
+			if (Math.abs(xVect) > Math.abs(yVect) ){
+				scalar = vectconstScalar/(Math.abs(Tx) + Math.abs(xVect));
+				}
+			else {
+				scalar = vectconstScalar/(Math.abs(Tx) + Math.abs(yVect));
+			}
+		}
+		else{
+			scalar = 1;
+		} 
+
+	}
+
+	function UpdateOmni(){
+
+		in_x = -(newJX - joyStartX);
+		in_y = joyStartY - newJY; 
+
+		in_rad = (Math.atan2(in_y,in_x) + Math.PI*2) % (Math.PI * 2);
+		changed_rad = in_rad - Math.PI/4;
+
+		if (Math.abs(in_x) > Math.abs(in_y) ){
+			normalize_scalar = Math.abs(Math.cos(in_rad));
+		}
+		else{
+			normalize_scalar = Math.abs(Math.sin(in_rad));
+		}
+
+		size_scalar = Math.sqrt((in_x**2) + (in_y**2))*normalize_scalar;
+
+		if ( Math.abs(Math.cos(changed_rad)) > Math.abs(Math.sin(changed_rad)) ){
+			xVect = (Math.sin(changed_rad) /Math.abs(Math.cos(changed_rad))) * size_scalar;
+			yVect = (Math.cos(changed_rad) /Math.abs(Math.cos(changed_rad))) * size_scalar;
+		}
+		else{
+			xVect = (Math.sin(changed_rad) /Math.abs(Math.sin(changed_rad))) * size_scalar;
+			yVect = (Math.cos(changed_rad) /Math.abs(Math.sin(changed_rad))) * size_scalar;
+		}
+
+	}
+
+	var xTop = 100; 
+	var yTop = 250;
+
+	var RWidth = 150;
+
+	function updateOmniGraphics(){
+		ctx.fillStyle = "#555555";
+		ctx.fillRect(xTop,yTop,RWidth,RWidth);
+
+		ctx.lineWidth = 4;
+		ctx.strokeStyle = "#FF0000";
+
+		//motor 1
+		ctx.beginPath();
+		ctx.moveTo(xTop,yTop);
+		ctx.lineTo(xTop + (xVect + Tx)*scalar,yTop - (xVect + Tx)*scalar);
+		ctx.stroke();
+
+		//motor 3
+		ctx.beginPath();
+		ctx.moveTo(xTop + RWidth,yTop + RWidth);
+		ctx.lineTo(xTop + RWidth + (xVect - Tx)*scalar,yTop + RWidth - (xVect - Tx)*scalar);
+		ctx.stroke();
+
+		ctx.strokeStyle = "#00FF00";
+		//motor 2
+		ctx.beginPath();
+		ctx.moveTo(xTop + RWidth,yTop);
+		ctx.lineTo(xTop - (yVect - Tx)*scalar + RWidth,yTop - (yVect - Tx)*scalar);
+		ctx.stroke();
+
+		//motor 4
+		ctx.beginPath();
+		ctx.moveTo(xTop,yTop + RWidth);
+		ctx.lineTo(xTop - (yVect + Tx)*scalar,yTop - (yVect + Tx)*scalar + RWidth);
+		ctx.stroke();
+
+		ctx.strokeStyle = "#ffa340";
+		ctx.lineWidth = 40;
+		ctx.beginPath();
+		ctx.arc(joyStartX,joyStartY,joyRadius,0,Math.PI*2);
+		ctx.stroke();
+
+
+		ctx.lineWidth = 8;
+		ctx.strokeStyle = "#555555";
+		ctx.beginPath();
+		ctx.arc(newJX,newJY,joyRadius + 20 ,0,Math.PI*2);
+		ctx.stroke();
+
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "#000000";
+		ctx.strokeRect(joyStartX - 4*joyRadius,joyStartY - 4*joyRadius,8*joyRadius,8*joyRadius);
+
+		ctx.strokeRect(joyStartX - 4*joyRadius - 60,joyStartY - 4*joyRadius + 200,8*joyRadius + 120,20);
+
+		ctx.lineWidth = 8;
+		ctx.strokeStyle = "#0000FF";
+		ctx.beginPath();
+		ctx.strokeRect(Tposx - 10,joyStartY - 4*joyRadius + 180,20,60);
+		ctx.stroke();
+
+		ctx.fillStyle = "#000000";
+		ctx.font = "20px Consolas";
+		ctx.fillText("Input X: "+ Math.round(-in_x/(joyRadius*4)*100)/100, 550, 50);
+		ctx.fillText("Input Y: "+ Math.round(in_y/(joyRadius*4)*100)/100, 550, 80);
+		ctx.fillText("Input Degrees: "+  Math.round((180 - in_rad*180/Math.PI + 360)%360), 550, 110);
+		ctx.fillText("Input Size "+ Math.round(size_scalar/(joyRadius*4)*100)/100, 550, 140);
+		ctx.fillText("Front Left And Back Right Rotationless Output: "+ Math.round(xVect*100/79)/100, 550, 170);
+		ctx.fillText("Front Right and Back Left Rotationless Ourput:"+ Math.round(yVect*100/79)/100, 550, 200);
+		ctx.fillText("Rotation:"+ Math.round(Tx*100/79)/100, 550, 230);
+		ctx.font = "40px Arial";
+		ctx.fillStyle = "#FFFFFF"
+		ctx.fillText("0",220,290);
+		ctx.fillText("1",105,290);
+		ctx.fillText("2",105,390);
+		ctx.fillText("3",220,390);
+
+	}
+
+	var joyStick = false;
+	var triggers = false;
+
+	function animate(){
+		joyStick = false;
+		triggers = false;		
+		requestAnimationFrame(animate);
+		if ( (mX > joyStartX - 4*joyRadius) && (mX < joyStartX + 4*joyRadius) && (mY > joyStartY - 4*joyRadius) && (mY < joyStartY + 4*joyRadius) ) {
+			joyStick = true;
+		}
+		if ((mY > joyStartY - 4*joyRadius + 180)&&(mX > joyStartX - 4*joyRadius - 40)&&(mX < joyStartX - 4*joyRadius + 201)&&(mY < joyStartY - 4*joyRadius + 240)){
+			triggers = true;
+		}
+		if (joyStick){
+			newJX = mX;
+			newJY = mY;
+
+		}
+		if (triggers){
+			Tx = (mX - joyStartX)/120;
+			Tposx = mX;
+			Tx = Tx * 79;
+			
+		}
+		if (joyStick || triggers){
+			UpdateOmni();
+			updateTriggers();
+			ctx.clearRect(0,0,innerWidth,innerHeight);
+			updateOmniGraphics();
+		}
+
+	}
+	UpdateOmni();
+	updateTriggers();
+	ctx.clearRect(0,0,innerWidth,innerHeight);
+	updateOmniGraphics();
+	animate();
+		
+	</script>
+</body>
+</html>
